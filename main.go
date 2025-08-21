@@ -17,6 +17,7 @@ import (
 	_ "github.com/serhatYilmazz/message-sender/docs"
 )
 
+//go:generate swag init
 func main() {
 	env := os.Getenv("ENVIRONMENT")
 	logger := log.NewLogger(env)

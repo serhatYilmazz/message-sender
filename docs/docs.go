@@ -143,28 +143,22 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "content": {
-                    "type": "string",
-                    "example": "Hello World"
+                    "type": "string"
                 },
                 "createdAt": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
+                    "type": "string"
                 },
                 "id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 },
                 "phoneNumber": {
-                    "type": "string",
-                    "example": "+1234567890"
+                    "type": "string"
                 },
                 "sent": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "updatedAt": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
+                    "type": "string"
                 }
             }
         },
@@ -230,6 +224,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {
