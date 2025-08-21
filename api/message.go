@@ -4,20 +4,23 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/serhatYilmazz/message-sender/internal/message"
+	"github.com/serhatYilmazz/message-sender/internal/scheduler"
 	"github.com/serhatYilmazz/message-sender/pkg/model"
 	"github.com/sirupsen/logrus"
 	"github.com/swaggo/fiber-swagger"
 )
 
 type MessageHandler struct {
-	MessageService message.Service
-	logger         *logrus.Logger
+	MessageService          message.Service
+	SchedulerControlService scheduler.ControlService
+	logger                  *logrus.Logger
 }
 
-func NewMessageHandler(messageService message.Service, logger *logrus.Logger) {
+func NewMessageHandler(messageService message.Service, schedulerControlService scheduler.ControlService, logger *logrus.Logger) {
 	messageHandler := MessageHandler{
-		MessageService: messageService,
-		logger:         logger,
+		MessageService:          messageService,
+		SchedulerControlService: schedulerControlService,
+		logger:                  logger,
 	}
 	app := fiber.New()
 
@@ -26,6 +29,7 @@ func NewMessageHandler(messageService message.Service, logger *logrus.Logger) {
 	api.Get("", messageHandler.FindAllMessages)
 	api.Post("", messageHandler.AddMessage)
 	api.Post("/process-message-sender", messageHandler.ProcessMessageSender)
+	api.Get("/scheduler-status", messageHandler.GetSchedulerStatus)
 	app.Get("/*", fiberSwagger.WrapHandler)
 
 	err := app.Listen(":8080")
@@ -79,7 +83,7 @@ func (m MessageHandler) ProcessMessageSender(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(errorResponse)
 	}
 
-	err := m.MessageService.ProcessMessageSender(ctx.Context(), messageSenderRequest)
+	err := m.SchedulerControlService.ProcessMessageSender(ctx.Context(), messageSenderRequest)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(&model.Response{
 			Code:    500,
@@ -87,9 +91,31 @@ func (m MessageHandler) ProcessMessageSender(ctx *fiber.Ctx) error {
 		})
 	}
 
+	statusMessage := "message sender disabled"
+	if messageSenderRequest.IsMessageSenderEnabled {
+		statusMessage = "message sender enabled"
+	}
+
 	return ctx.Status(fiber.StatusOK).JSON(&model.Response{
 		Code:    200,
-		Message: "message sender is changed as desired.",
+		Message: statusMessage,
+	})
+}
+
+// GetSchedulerStatus godoc
+// @Summary Get scheduler status
+// @Description Get the current status of the message scheduler
+// @Tags messages
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]bool
+// @Failure 500 {object} model.Response
+// @Router /api/messages/scheduler-status [get]
+func (m MessageHandler) GetSchedulerStatus(ctx *fiber.Ctx) error {
+	isRunning := m.SchedulerControlService.GetSchedulerStatus(ctx.Context())
+
+	return ctx.Status(fiber.StatusOK).JSON(map[string]bool{
+		"isRunning": isRunning,
 	})
 }
 

@@ -7,7 +7,6 @@
 package main
 
 import (
-	"context"
 	"github.com/serhatYilmazz/message-sender/api"
 	"github.com/serhatYilmazz/message-sender/internal/config"
 	"github.com/serhatYilmazz/message-sender/internal/message"
@@ -52,10 +51,11 @@ func main() {
 
 	// Initialize services
 	outboxService := outbox.NewService(pgOutboxRepository, logger)
+
 	webhookSender := webhook.NewSender(cfg.WebhookConfig, logger)
 	messageService := message.NewMessageService(pgMessageRepository, outboxService, logger)
 
-	// Initialize scheduler
+	// Initialize scheduler components
 	outboxScheduler := scheduler.NewScheduler(
 		cfg.SchedulerConfig,
 		outboxService,
@@ -63,9 +63,8 @@ func main() {
 		logger,
 	)
 
-	// Create context for graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	schedulerManager := scheduler.NewManager(outboxScheduler, logger)
+	schedulerControlService := scheduler.NewControlService(schedulerManager, logger)
 
 	// Handle graceful shutdown
 	sigChan := make(chan os.Signal, 1)
@@ -73,33 +72,22 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	// Start scheduler in a goroutine
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		logger.Info("starting outbox scheduler...")
-		if err := outboxScheduler.Start(ctx); err != nil && err != context.Canceled {
-			logger.WithError(err).Error("scheduler stopped with error")
-		}
-	}()
-
 	// Start API server in a goroutine
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		logger.Info("starting API server...")
-		api.NewMessageHandler(messageService, logger)
+		api.NewMessageHandler(messageService, schedulerControlService, logger)
 	}()
+
+	logger.Info("application started successfully. Use /api/messages/process-message-sender to control the scheduler")
 
 	// Wait for shutdown signal
 	<-sigChan
 	logger.Info("shutdown signal received, stopping services...")
 
-	// Cancel context to stop scheduler
-	cancel()
-
-	// Stop scheduler explicitly
-	if err := outboxScheduler.Stop(); err != nil {
+	// Stop scheduler if running
+	if err := schedulerManager.StopScheduler(); err != nil {
 		logger.WithError(err).Error("error stopping scheduler")
 	}
 
