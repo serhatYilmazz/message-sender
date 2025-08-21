@@ -14,3 +14,4 @@ scheduler:
   interval: "2m"
   batch_size: 2
   send_timeout: "5m"
+  enabled: false

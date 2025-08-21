@@ -7,6 +7,7 @@
 package main
 
 import (
+	"context"
 	"github.com/serhatYilmazz/message-sender/api"
 	"github.com/serhatYilmazz/message-sender/internal/config"
 	"github.com/serhatYilmazz/message-sender/internal/message"
@@ -64,6 +65,12 @@ func main() {
 	)
 
 	schedulerManager := scheduler.NewManager(outboxScheduler, logger)
+	if cfg.SchedulerConfig.Enabled {
+		err := schedulerManager.StartScheduler(context.Background())
+		if err != nil {
+			logger.WithError(err).Error("error while starting scheduler on startup")
+		}
+	}
 	schedulerControlService := scheduler.NewControlService(schedulerManager, logger)
 
 	// Handle graceful shutdown

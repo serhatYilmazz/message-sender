@@ -20,6 +20,7 @@ type SchedulerConfig struct {
 	Interval    time.Duration `mapstructure:"interval"`
 	BatchSize   int           `mapstructure:"batch_size"`
 	SendTimeout time.Duration `mapstructure:"send_timeout"`
+	Enabled     bool          `mapstructure:"enabled"`
 }
 
 type Config struct {
