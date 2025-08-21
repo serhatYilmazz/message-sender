@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/serhatYilmazz/message-sender/internal/cache"
 	"github.com/serhatYilmazz/message-sender/internal/message"
 	"github.com/serhatYilmazz/message-sender/internal/scheduler"
 	"github.com/serhatYilmazz/message-sender/pkg/model"
@@ -13,13 +14,15 @@ import (
 type MessageHandler struct {
 	MessageService          message.Service
 	SchedulerControlService scheduler.ControlService
+	CacheService            cache.Service
 	logger                  *logrus.Logger
 }
 
-func NewMessageHandler(messageService message.Service, schedulerControlService scheduler.ControlService, logger *logrus.Logger) {
+func NewMessageHandler(messageService message.Service, schedulerControlService scheduler.ControlService, cacheService cache.Service, logger *logrus.Logger) {
 	messageHandler := MessageHandler{
 		MessageService:          messageService,
 		SchedulerControlService: schedulerControlService,
+		CacheService:            cacheService,
 		logger:                  logger,
 	}
 	app := fiber.New()
@@ -30,6 +33,9 @@ func NewMessageHandler(messageService message.Service, schedulerControlService s
 	api.Post("", messageHandler.AddMessage)
 	api.Post("/process-message-sender", messageHandler.ProcessMessageSender)
 	api.Get("/scheduler-status", messageHandler.GetSchedulerStatus)
+
+	api.Get("/webhook-delivery/:messageId", messageHandler.GetWebhookDelivery)
+
 	app.Get("/*", fiberSwagger.WrapHandler)
 
 	err := app.Listen(":8080")
@@ -158,4 +164,43 @@ func (m MessageHandler) AddMessage(ctx *fiber.Ctx) error {
 		})
 	}
 	return ctx.Status(fiber.StatusCreated).JSON(savedMessage)
+}
+
+// GetWebhookDelivery godoc
+// @Summary Get webhook delivery record
+// @Description Retrieve webhook delivery record by message ID from cache
+// @Tags webhook
+// @Accept json
+// @Produce json
+// @Param messageId path string true "Message ID"
+// @Success 200 {object} cache.WebhookDelivery
+// @Failure 404 {object} model.Response
+// @Failure 500 {object} model.Response
+// @Router /api/messages/webhook-delivery/{messageId} [get]
+func (m MessageHandler) GetWebhookDelivery(ctx *fiber.Ctx) error {
+	messageId := ctx.Params("messageId")
+	if messageId == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(&model.Response{
+			Code:    400,
+			Message: "message ID is required",
+		})
+	}
+
+	delivery, err := m.CacheService.GetDeliveryRecord(ctx.Context(), messageId)
+	if err != nil {
+		m.logger.WithError(err).Errorf("failed to get webhook delivery for message ID: %s", messageId)
+		return ctx.Status(fiber.StatusInternalServerError).JSON(&model.Response{
+			Code:    500,
+			Message: "failed to retrieve webhook delivery record",
+		})
+	}
+
+	if delivery == nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(&model.Response{
+			Code:    404,
+			Message: "webhook delivery record not found",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(delivery)
 }

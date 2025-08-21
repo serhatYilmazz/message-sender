@@ -1,9 +1,9 @@
 database:
   host: localhost
-  port: 5433
-  user: myuser
-  password: mypassword
-  dbname: mydb
+  port: 5432
+  user: postgres
+  password: postgres
+  dbname: postgres
   sslmode: "disable"
 
 webhook:
@@ -15,3 +15,14 @@ scheduler:
   batch_size: 2
   send_timeout: "5m"
   enabled: false
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+  dial_timeout: "5s"
+  read_timeout: "3s"
+  write_timeout: "3s"
+  pool_size: 10
+  ttl: "24h"
