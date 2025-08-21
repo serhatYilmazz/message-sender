@@ -1,5 +1,9 @@
 package config
 
+import (
+	"time"
+)
+
 type DbConfig struct {
 	Host     string `mapstructure:"host"`
 	Port     int    `mapstructure:"port"`
@@ -9,6 +13,19 @@ type DbConfig struct {
 	SslMode  string `mapstructure:"sslmode"`
 }
 
+type SchedulerConfig struct {
+	Interval    time.Duration `mapstructure:"interval"`
+	BatchSize   int           `mapstructure:"batch_size"`
+	SendTimeout time.Duration `mapstructure:"send_timeout"`
+}
+
+type WebhookConfig struct {
+	URL     string        `mapstructure:"url"`
+	Timeout time.Duration `mapstructure:"timeout"`
+}
+
 type Config struct {
-	DbConfig DbConfig `mapstructure:"database"`
+	DbConfig        DbConfig        `mapstructure:"database"`
+	WebhookConfig   WebhookConfig   `mapstructure:"webhook"`
+	SchedulerConfig SchedulerConfig `mapstructure:"scheduler"`
 }
