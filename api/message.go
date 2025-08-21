@@ -8,28 +8,32 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type Message struct {
+type MessageHandler struct {
 	MessageService message.Service
 	logger         *logrus.Logger
 }
 
-func (m Message) NewMessageHandler(messageService *message.Service) {
+func NewMessageHandler(messageService message.Service, logger *logrus.Logger) {
+	messageHandler := MessageHandler{
+		MessageService: messageService,
+		logger:         logger,
+	}
 	app := fiber.New()
 
 	api := app.Group("/api/messages")
 
-	api.Get("", m.FindAllMessages)
-	api.Post("")
-	api.Post("/process-message-sender", m.ProcessMessageSender)
+	api.Get("", messageHandler.FindAllMessages)
+	api.Post("", messageHandler.AddMessage)
+	api.Post("/process-message-sender", messageHandler.ProcessMessageSender)
 
 	err := app.Listen(":8080")
 	if err != nil {
-		m.logger.WithError(err).Errorf("error while listening port 8080")
+		messageHandler.logger.WithError(err).Errorf("error while listening port 8080")
 		return
 	}
 }
 
-func (m Message) FindAllMessages(ctx *fiber.Ctx) error {
+func (m MessageHandler) FindAllMessages(ctx *fiber.Ctx) error {
 	messages, err := m.MessageService.FindAllMessages(ctx.Context())
 	if err != nil {
 		return nil
@@ -38,7 +42,7 @@ func (m Message) FindAllMessages(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(messages)
 }
 
-func (m Message) ProcessMessageSender(ctx *fiber.Ctx) error {
+func (m MessageHandler) ProcessMessageSender(ctx *fiber.Ctx) error {
 	var messageSenderRequest model.MessageSenderRequest
 	if err := ctx.BodyParser(&messageSenderRequest); err != nil {
 		errorString := err.Error()
@@ -64,7 +68,7 @@ func (m Message) ProcessMessageSender(ctx *fiber.Ctx) error {
 	})
 }
 
-func (m Message) AddMessage(ctx *fiber.Ctx) error {
+func (m MessageHandler) AddMessage(ctx *fiber.Ctx) error {
 	var addMessageRequest model.AddMessageRequest
 	if err := ctx.BodyParser(&addMessageRequest); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})

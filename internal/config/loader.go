@@ -6,24 +6,25 @@ import (
 )
 
 func Load(logger *logrus.Logger, configPath string) (*Config, error) {
-	viper.SetConfigFile("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(configPath)
+	v := viper.New()
+	v.SetConfigName("config")
+	v.SetConfigType("yaml")
+	v.AddConfigPath(configPath)
 
-	viper.AutomaticEnv()
+	v.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err != nil {
-		logger.Errorf("error while reading the config")
+	if err := v.ReadInConfig(); err != nil {
+		logger.WithError(err).Errorf("error while reading the config")
 		return nil, err
 	}
 
 	var cfg Config
-	err := viper.Unmarshal(&cfg)
+	err := v.Unmarshal(&cfg)
 	if err != nil {
 		logger.Errorf("error while decoding the config")
 		return nil, err
 	}
 
-	logger.Infof("Config loaded from: %s", viper.ConfigFileUsed())
+	logger.Infof("Config loaded from: %s", v.ConfigFileUsed())
 	return &cfg, nil
 }
