@@ -1,0 +1,133 @@
+definitions:
+  message.Message:
+    properties:
+      content:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: integer
+      phoneNumber:
+        type: string
+      sent:
+        type: boolean
+      updatedAt:
+        type: string
+    type: object
+  model.AddMessageRequest:
+    properties:
+      content:
+        maxLength: 20
+        type: string
+      recipientPhoneNumber:
+        type: string
+    required:
+    - content
+    - recipientPhoneNumber
+    type: object
+  model.AddMessageResponse:
+    properties:
+      content:
+        type: string
+      id:
+        type: string
+      recipientPhoneNumber:
+        type: string
+    type: object
+  model.MessageSenderRequest:
+    properties:
+      isMessageSenderEnabled:
+        type: boolean
+    type: object
+  model.Response:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+  title: Message Sender API
+paths:
+  /api/messages:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all messages from the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/message.Message'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Get all messages
+      tags:
+      - messages
+    post:
+      consumes:
+      - application/json
+      description: Create a new message with content and recipient phone number
+      parameters:
+      - description: Message data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AddMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.AddMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Add a new message
+      tags:
+      - messages
+  /api/messages/process-message-sender:
+    post:
+      consumes:
+      - application/json
+      description: Enable or disable the message sender functionality
+      parameters:
+      - description: Message sender settings
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.MessageSenderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Process message sender settings
+      tags:
+      - messages
+swagger: "2.0"
