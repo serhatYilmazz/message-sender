@@ -9,6 +9,7 @@ package main
 import (
 	"context"
 	"github.com/serhatYilmazz/message-sender/api"
+	"github.com/serhatYilmazz/message-sender/internal/cache"
 	"github.com/serhatYilmazz/message-sender/internal/config"
 	"github.com/serhatYilmazz/message-sender/internal/message"
 	"github.com/serhatYilmazz/message-sender/internal/outbox"
@@ -16,6 +17,7 @@ import (
 	"github.com/serhatYilmazz/message-sender/internal/webhook"
 	"github.com/serhatYilmazz/message-sender/pkg/db"
 	"github.com/serhatYilmazz/message-sender/pkg/log"
+	"github.com/serhatYilmazz/message-sender/pkg/redis"
 	"os"
 	"os/signal"
 	"sync"
@@ -34,10 +36,22 @@ func main() {
 		return
 	}
 
+	// Initialize PostgreSQL connection
 	postgresDb, err := db.NewPostgresDb(cfg.DbConfig)
 	if err != nil {
 		logger.Fatal("db connection is failed:", err)
 	}
+
+	// Initialize Redis connection
+	redisClient, err := redis.NewClient(cfg.RedisConfig, logger)
+	if err != nil {
+		logger.Fatal("redis connection is failed:", err)
+	}
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			logger.WithError(err).Error("error closing Redis connection")
+		}
+	}()
 
 	// Initialize repositories
 	pgMessageRepository := &message.PgRepository{
@@ -50,17 +64,22 @@ func main() {
 		Logger: logger,
 	}
 
+	// Initialize cache repository and service
+	cacheRepository := cache.NewRedisRepository(redisClient, logger)
+	cacheService := cache.NewService(cacheRepository, cfg.RedisConfig, logger)
+
 	// Initialize services
 	outboxService := outbox.NewService(pgOutboxRepository, logger)
 
 	webhookSender := webhook.NewSender(cfg.WebhookConfig, logger)
 	messageService := message.NewMessageService(pgMessageRepository, outboxService, logger)
 
-	// Initialize scheduler components
+	// Initialize scheduler components with cache service
 	outboxScheduler := scheduler.NewScheduler(
 		cfg.SchedulerConfig,
 		outboxService,
 		webhookSender,
+		cacheService,
 		logger,
 	)
 
@@ -84,7 +103,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		logger.Info("starting API server...")
-		api.NewMessageHandler(messageService, schedulerControlService, logger)
+		api.NewMessageHandler(messageService, schedulerControlService, cacheService, logger)
 	}()
 
 	logger.Info("application started successfully. Use /api/messages/process-message-sender to control the scheduler")

@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"github.com/serhatYilmazz/message-sender/internal/cache"
 	"github.com/serhatYilmazz/message-sender/internal/config"
 	"github.com/serhatYilmazz/message-sender/internal/outbox"
 	"github.com/serhatYilmazz/message-sender/internal/webhook"
@@ -19,6 +20,7 @@ type scheduler struct {
 	config        config.SchedulerConfig
 	outboxService outbox.Service
 	webhookSender webhook.Sender
+	cacheService  cache.Service
 	logger        *logrus.Logger
 	stopChan      chan struct{}
 	isRunning     bool
@@ -28,12 +30,14 @@ func NewScheduler(
 	config config.SchedulerConfig,
 	outboxService outbox.Service,
 	webhookSender webhook.Sender,
+	cacheService cache.Service,
 	logger *logrus.Logger,
 ) Scheduler {
 	return &scheduler{
 		config:        config,
 		outboxService: outboxService,
 		webhookSender: webhookSender,
+		cacheService:  cacheService,
 		logger:        logger,
 		stopChan:      make(chan struct{}),
 		isRunning:     false,
@@ -114,7 +118,25 @@ func (s *scheduler) sendMessage(ctx context.Context, entry outbox.OutboxEntry) e
 		WithField("message_id", entry.MessageId).
 		Debug("sending message via webhook")
 
-	_, err := s.webhookSender.SendMessage(sendCtx, entry)
+	response, err := s.webhookSender.SendMessage(sendCtx, entry)
+	if err != nil {
+		s.logger.WithContext(sendCtx).WithError(err).
+			WithField("outbox_id", entry.Id).
+			WithField("message_id", entry.MessageId).
+			Error("failed to send webhook")
+		return err
+	}
 
-	return err
+	if response != nil {
+		if cacheErr := s.cacheService.RecordWebhookDelivery(sendCtx, entry, response); cacheErr != nil {
+			// Log cache error but don't fail the operation - webhook was successful
+			s.logger.WithContext(sendCtx).WithError(cacheErr).
+				WithField("outbox_id", entry.Id).
+				WithField("message_id", entry.MessageId).
+				WithField("webhook_response_message_id", response.MessageId).
+				Warn("failed to record webhook delivery in cache, but webhook was successful")
+		}
+	}
+
+	return nil
 }

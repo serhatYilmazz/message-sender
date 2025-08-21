@@ -23,8 +23,21 @@ type SchedulerConfig struct {
 	Enabled     bool          `mapstructure:"enabled"`
 }
 
+type RedisConfig struct {
+	Host         string        `mapstructure:"host"`
+	Port         int           `mapstructure:"port"`
+	Password     string        `mapstructure:"password"`
+	DB           int           `mapstructure:"db"`
+	DialTimeout  time.Duration `mapstructure:"dial_timeout"`
+	ReadTimeout  time.Duration `mapstructure:"read_timeout"`
+	WriteTimeout time.Duration `mapstructure:"write_timeout"`
+	PoolSize     int           `mapstructure:"pool_size"`
+	TTL          time.Duration `mapstructure:"ttl"`
+}
+
 type Config struct {
 	DbConfig        DbConfig        `mapstructure:"database"`
 	WebhookConfig   WebhookConfig   `mapstructure:"webhook"`
 	SchedulerConfig SchedulerConfig `mapstructure:"scheduler"`
+	RedisConfig     RedisConfig     `mapstructure:"redis"`
 }
