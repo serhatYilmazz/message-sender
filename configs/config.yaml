@@ -5,3 +5,12 @@ database:
   password: mypassword
   dbname: mydb
   sslmode: "disable"
+
+webhook:
+  url: "https://webhook.site/503d7eb6-f767-45ee-b5ef-42268b291a73"
+  timeout: "30s"
+
+scheduler:
+  interval: "2m"
+  batch_size: 2
+  send_timeout: "5m"
