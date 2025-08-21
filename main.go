@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/serhatYilmazz/message-sender/api"
 	"github.com/serhatYilmazz/message-sender/internal/config"
 	"github.com/serhatYilmazz/message-sender/internal/message"
 	"github.com/serhatYilmazz/message-sender/pkg/db"
@@ -9,10 +10,10 @@ import (
 )
 
 func main() {
-	env := os.Getenv("environment")
+	env := os.Getenv("ENVIRONMENT")
 	logger := log.NewLogger(env)
 
-	cfg, err := config.Load(logger, "configs")
+	cfg, err := config.Load(logger, "./configs")
 	if err != nil {
 		return
 	}
@@ -26,4 +27,7 @@ func main() {
 		Db:     postgresDb,
 		Logger: logger,
 	}
+
+	messageService := message.NewMessageService(&pgRepository, logger)
+	api.NewMessageHandler(messageService, logger)
 }
