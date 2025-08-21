@@ -1,3 +1,9 @@
+// Message Sender API
+//
+// This is a sample Message Sender API server.
+//
+// @title Message Sender API
+
 package main
 
 import (
@@ -7,6 +13,8 @@ import (
 	"github.com/serhatYilmazz/message-sender/pkg/db"
 	"github.com/serhatYilmazz/message-sender/pkg/log"
 	"os"
+
+	_ "github.com/serhatYilmazz/message-sender/docs"
 )
 
 func main() {

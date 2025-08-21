@@ -3,10 +3,10 @@ package message
 import "time"
 
 type Message struct {
-	Id          int64
-	Content     string
-	PhoneNumber string
-	Sent        bool
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	Id          int64     `json:"id"`
+	Content     string    `json:"content"`
+	PhoneNumber string    `json:"phoneNumber"`
+	Sent        bool      `json:"sent"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
