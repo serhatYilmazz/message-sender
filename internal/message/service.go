@@ -7,10 +7,10 @@ import (
 )
 
 type Service interface {
-	FindAllMessages(ctx context.Context) ([]Message, error)
+	FindAllMessages(ctx context.Context) ([]model.MessageDto, error)
 	MarkAsSent(ctx context.Context, id int64) error
 	ProcessMessageSender(ctx context.Context, request model.MessageSenderRequest) error
-	SaveMessage(ctx context.Context, request model.AddMessageRequest) error
+	SaveMessage(ctx context.Context, request model.AddMessageRequest) (*model.MessageDto, error)
 }
 
 type service struct {
@@ -25,7 +25,7 @@ func NewMessageService(repository Repository, logger *logrus.Logger) Service {
 	}
 }
 
-func (s *service) FindAllMessages(ctx context.Context) ([]Message, error) {
+func (s *service) FindAllMessages(ctx context.Context) ([]model.MessageDto, error) {
 	s.Logger.WithContext(ctx).Debug("[message.service][FindAllMessages] is called")
 	return s.Repository.FindAllMessages(ctx)
 }
@@ -40,7 +40,7 @@ func (s *service) ProcessMessageSender(ctx context.Context, request model.Messag
 	panic("implement me")
 }
 
-func (s *service) SaveMessage(ctx context.Context, request model.AddMessageRequest) error {
-	//TODO implement me
-	panic("implement me")
+func (s *service) SaveMessage(ctx context.Context, request model.AddMessageRequest) (*model.MessageDto, error) {
+	s.Logger.WithContext(ctx).Debugf("[message.service][SaveMessage] is called with %v", request)
+	return s.Repository.SaveMessage(ctx, request)
 }

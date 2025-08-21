@@ -1,19 +1,4 @@
 definitions:
-  message.Message:
-    properties:
-      content:
-        type: string
-      createdAt:
-        type: string
-      id:
-        type: integer
-      phoneNumber:
-        type: string
-      sent:
-        type: boolean
-      updatedAt:
-        type: string
-    type: object
   model.AddMessageRequest:
     properties:
       content:
@@ -25,13 +10,13 @@ definitions:
     - content
     - recipientPhoneNumber
     type: object
-  model.AddMessageResponse:
+  model.MessageDto:
     properties:
       content:
         type: string
       id:
         type: string
-      recipientPhoneNumber:
+      phoneNumber:
         type: string
     type: object
   model.MessageSenderRequest:
@@ -62,7 +47,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/message.Message'
+              $ref: '#/definitions/model.MessageDto'
             type: array
         "500":
           description: Internal Server Error
@@ -88,7 +73,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.AddMessageResponse'
+            $ref: '#/definitions/model.MessageDto'
         "400":
           description: Bad Request
           schema:

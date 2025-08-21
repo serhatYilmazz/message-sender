@@ -34,7 +34,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/message.Message"
+                                "$ref": "#/definitions/model.MessageDto"
                             }
                         }
                     },
@@ -73,7 +73,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.AddMessageResponse"
+                            "$ref": "#/definitions/model.MessageDto"
                         }
                     },
                     "400": {
@@ -139,29 +139,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "message.Message": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "phoneNumber": {
-                    "type": "string"
-                },
-                "sent": {
-                    "type": "boolean"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
         "model.AddMessageRequest": {
             "type": "object",
             "required": [
@@ -178,7 +155,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.AddMessageResponse": {
+        "model.MessageDto": {
             "type": "object",
             "properties": {
                 "content": {
@@ -187,7 +164,7 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "recipientPhoneNumber": {
+                "phoneNumber": {
                     "type": "string"
                 }
             }
