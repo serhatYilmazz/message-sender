@@ -3,7 +3,7 @@ package message
 import "time"
 
 type Message struct {
-	Id          int64     `json:"id"`
+	Id          string    `json:"id"`
 	Content     string    `json:"content"`
 	PhoneNumber string    `json:"phoneNumber"`
 	Sent        bool      `json:"sent"`

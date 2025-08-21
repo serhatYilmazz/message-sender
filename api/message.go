@@ -41,7 +41,7 @@ func NewMessageHandler(messageService message.Service, logger *logrus.Logger) {
 // @Tags messages
 // @Accept json
 // @Produce json
-// @Success 200 {array} message.Message
+// @Success 200 {array} model.MessageDto
 // @Failure 500 {object} model.Response
 // @Router /api/messages [get]
 func (m MessageHandler) FindAllMessages(ctx *fiber.Ctx) error {
@@ -100,7 +100,7 @@ func (m MessageHandler) ProcessMessageSender(ctx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param request body model.AddMessageRequest true "Message data"
-// @Success 200 {object} model.AddMessageResponse
+// @Success 200 {object} model.MessageDto
 // @Failure 400 {object} model.Response
 // @Failure 500 {object} model.Response
 // @Router /api/messages [post]
@@ -124,5 +124,12 @@ func (m MessageHandler) AddMessage(ctx *fiber.Ctx) error {
 		})
 	}
 
-	return m.MessageService.SaveMessage(ctx.Context(), addMessageRequest)
+	savedMessage, err := m.MessageService.SaveMessage(ctx.Context(), addMessageRequest)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(&model.Response{
+			Code:    500,
+			Message: "internal server error",
+		})
+	}
+	return ctx.Status(fiber.StatusCreated).JSON(savedMessage)
 }
