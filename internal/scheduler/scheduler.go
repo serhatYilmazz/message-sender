@@ -12,6 +12,7 @@ import (
 type Scheduler interface {
 	Start(ctx context.Context) error
 	Stop() error
+	IsRunning() bool
 }
 
 type scheduler struct {
@@ -20,6 +21,7 @@ type scheduler struct {
 	webhookSender webhook.Sender
 	logger        *logrus.Logger
 	stopChan      chan struct{}
+	isRunning     bool
 }
 
 func NewScheduler(
@@ -34,23 +36,33 @@ func NewScheduler(
 		webhookSender: webhookSender,
 		logger:        logger,
 		stopChan:      make(chan struct{}),
+		isRunning:     false,
 	}
 }
 
 func (s *scheduler) Start(ctx context.Context) error {
+	if s.isRunning {
+		s.logger.WithContext(ctx).Info("[scheduler][Start] scheduler is already running")
+		return nil
+	}
+
 	s.logger.WithContext(ctx).Info("[scheduler][Start] starting outbox message scheduler")
+	s.isRunning = true
 
 	ticker := time.NewTicker(s.config.Interval)
 	defer ticker.Stop()
 
 	s.processOutboxEntries(ctx)
+
 	for {
 		select {
 		case <-ctx.Done():
 			s.logger.WithContext(ctx).Info("[scheduler][Start] context cancelled, stopping scheduler")
+			s.isRunning = false
 			return ctx.Err()
 		case <-s.stopChan:
 			s.logger.WithContext(ctx).Info("[scheduler][Start] stop signal received, stopping scheduler")
+			s.isRunning = false
 			return nil
 		case <-ticker.C:
 			s.processOutboxEntries(ctx)
@@ -59,9 +71,19 @@ func (s *scheduler) Start(ctx context.Context) error {
 }
 
 func (s *scheduler) Stop() error {
+	if !s.isRunning {
+		s.logger.Info("[scheduler][Stop] scheduler is not running")
+		return nil
+	}
+
 	s.logger.Info("[scheduler][Stop] stopping scheduler")
 	close(s.stopChan)
+	s.isRunning = false
 	return nil
+}
+
+func (s *scheduler) IsRunning() bool {
+	return s.isRunning
 }
 
 func (s *scheduler) processOutboxEntries(ctx context.Context) {
