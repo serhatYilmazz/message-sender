@@ -28,13 +28,14 @@ func NewMessageHandler(messageService message.Service, schedulerControlService s
 	app := fiber.New()
 
 	api := app.Group("/api/messages")
+	apiWebhook := app.Group("/api/webhook-delivery")
 
 	api.Get("", messageHandler.FindAllMessages)
 	api.Post("", messageHandler.AddMessage)
 	api.Post("/process-message-sender", messageHandler.ProcessMessageSender)
 	api.Get("/scheduler-status", messageHandler.GetSchedulerStatus)
 
-	api.Get("/webhook-delivery/:messageId", messageHandler.GetWebhookDelivery)
+	apiWebhook.Get("/:messageId", messageHandler.GetWebhookDelivery)
 
 	app.Get("/*", fiberSwagger.WrapHandler)
 
@@ -176,7 +177,7 @@ func (m MessageHandler) AddMessage(ctx *fiber.Ctx) error {
 // @Success 200 {object} cache.WebhookDelivery
 // @Failure 404 {object} model.Response
 // @Failure 500 {object} model.Response
-// @Router /api/messages/webhook-delivery/{messageId} [get]
+// @Router /api/webhook-delivery/{messageId} [get]
 func (m MessageHandler) GetWebhookDelivery(ctx *fiber.Ctx) error {
 	messageId := ctx.Params("messageId")
 	if messageId == "" {
