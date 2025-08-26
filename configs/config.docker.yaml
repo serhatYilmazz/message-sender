@@ -1,0 +1,28 @@
+database:
+  host: postgres
+  port: 5432
+  user: postgres
+  password: postgres
+  dbname: postgres
+  sslmode: "disable"
+
+webhook:
+  url: "https://webhook.site/503d7eb6-f767-45ee-b5ef-42268b291a73"
+  timeout: "30s"
+
+scheduler:
+  interval: "2m"
+  batch_size: 2
+  send_timeout: "5m"
+  enabled: false
+
+redis:
+  host: "redis"
+  port: 6379
+  password: ""
+  db: 0
+  dial_timeout: "5s"
+  read_timeout: "3s"
+  write_timeout: "3s"
+  pool_size: 10
+  ttl: "24h" 

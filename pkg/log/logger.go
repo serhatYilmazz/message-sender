@@ -15,7 +15,7 @@ func NewLogger(environment string) *logrus.Logger {
 			ForceColors:   true,
 		})
 		logger.SetLevel(logrus.DebugLevel)
-	case "prod":
+	case "production":
 		logger.SetFormatter(&logrus.JSONFormatter{})
 		logger.SetLevel(logrus.InfoLevel)
 	}
