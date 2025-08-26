@@ -17,7 +17,7 @@ type PgRepository struct {
 
 func (r *PgRepository) FindAllMessages(ctx context.Context) ([]model.MessageDto, error) {
 	r.Logger.WithContext(ctx).Debugf("[PgRepository][FindAllMessages] is called")
-	query := "SELECT id, content, phone_number, created_at, updated_at FROM messages;"
+	query := "SELECT id, content, phone_number, created_at, updated_at FROM messages FOR UPDATE;"
 	rows, err := r.Db.QueryContext(ctx, query)
 	if err != nil {
 		r.Logger.WithContext(ctx).WithError(err).Error("error while querying for all messages: ")
